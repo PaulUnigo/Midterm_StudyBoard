@@ -25,33 +25,33 @@ export default function RegisterPage() {
   // 5. On success, router.push("/groups") and router.refresh().
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError("TODO: implement register submit handler");
+    setError("");
     setIsSubmitting(true);
 
-    const response = await fetch("api/register", {
+    const response = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify({ name, email, password }),
     });
 
-    if (!response.ok){
+    if (!response.ok) {
       const data = await response.json();
       setError(data.error ?? "Something went wrong");
       setIsSubmitting(false);
       return;
     }
 
-    const result = await signIn( "credentials", {
+    const result = await signIn("credentials", {
       email,
-      password, 
+      password,
       redirect: false,
     });
 
     setIsSubmitting(false);
 
-    if ( result?.error ) {
+    if (result?.error) {
       router.push("/login");
-        return;
+      return;
     }
 
     router.push("/groups");

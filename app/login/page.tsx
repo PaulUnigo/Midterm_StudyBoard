@@ -28,7 +28,7 @@ export default function LoginPage() {
     setError("");
     setIsSubmitting(true);
 
-    const result = await signIn( "credentials", {
+    const result = await signIn("credentials", {
       email,
       password,
       redirect: false,
@@ -36,7 +36,7 @@ export default function LoginPage() {
 
     setIsSubmitting(false);
 
-    if ( result?.error ){
+    if (result?.error) {
       setError("Invalid email or password.");
       return;
     }

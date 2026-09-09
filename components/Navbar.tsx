@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { redirect, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 
 const links = [
@@ -12,8 +12,6 @@ const links = [
 export default function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  // TODO (Step 9): Get the session with:
-  // `status` is one of "loading" | "authenticated" | "unauthenticated".
 
   return (
     <nav className="flex items-center justify-between border-b px-6 py-4">
@@ -36,15 +34,13 @@ export default function Navbar() {
               </Link>
             );
           })}
-          {/* TODO (Step 10): When status === "authenticated", render a
-              <Link href="/groups/new"> "New Group" link here too. */}
           {status === "authenticated" && (
             <Link
-              href= "/groups/new"
-              className = {
+              href="/groups/new"
+              className={
                 pathname === "/groups/new"
-                ? "font-semibold text-blue-600"
-                : "text-gray-600 hover:text-blue-600"
+                  ? "font-semibold text-blue-600"
+                  : "text-gray-600 hover:text-blue-600"
               }
             >
               New Group
@@ -54,22 +50,18 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-4 text-sm">
-        {/* TODO (Step 11): Replace this placeholder with real auth-aware UI:
-            - If status === "authenticated": show "Hi, {session.user?.name}"
-              and a "Sign Out" button that calls signOut({ callbackUrl: "/" }).
-            - Otherwise: show "Log In" and "Register" links, like below. */}
         {status === "authenticated" ? (
           <>
-            <span className="text-gray-600">Hello, {session.user?.name} </span>
-            <button 
-              onClick={() => signOut(redirect("/login"))}
+            <span className="text-gray-600">Hello, {session?.user?.name}</span>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
               className="text-gray-600 hover:text-blue-600"
             >
               Sign Out
             </button>
           </>
-        )
-        :
+        ) 
+        : 
         (
           <>
             <Link href="/login" className="text-gray-600 hover:text-blue-600">
@@ -79,8 +71,7 @@ export default function Navbar() {
               Register
             </Link>
           </>
-        )
-        }
+        )}
       </div>
     </nav>
   );

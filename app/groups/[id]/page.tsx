@@ -5,9 +5,22 @@ import TaskItem from "@/components/TaskItem";
 export default async function GroupDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const group = await getGroupById(params.id);
+  const { id } = await params;
+
+  const group = await getGroupById(id);
+
+  //THESE ARE REPLACEMENT COMMENTS FOR THE CODE ABOVE, I WILL DELETE THEM LATER
+// export default async function GroupDetailPage({
+//   params,
+// }: {
+//   params: { id: string };
+// }) {
+//   const group = await getGroupById(params.id);
+
+
+
 
   // Next.js's built-in way to render the closest not-found.tsx (or a
   // default 404) when a dynamic route doesn't match real data.

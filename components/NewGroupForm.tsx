@@ -27,11 +27,11 @@ export default function NewGroupForm() {
 
     const response = await fetch("/api/groups", {
       method: "POST",
-      headers: { "Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, subject, memberCount }),
     });
 
-    if ( !response.ok ){
+    if (!response.ok) {
       const data = await response.json();
       setError(data.error ?? "Something went wrong");
       setIsSubmitting(false);
@@ -39,7 +39,7 @@ export default function NewGroupForm() {
     }
 
     const newGroup = await response.json();
-    router.push(`/groups${newGroup.id}`)
+    router.push(`/groups/${newGroup.id}`);
   }
 
   return (

@@ -2,39 +2,46 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getGroupById, updateTask, deleteTask } from "@/lib/data";
+import { updateTaskSchema } from "@/lib/validations";
 
-// TODO (Step 15): PATCH /api/groups/:id/tasks/:taskId — update a task.
-// Requires authentication AND ownership of the parent group.
-// Same 3-check pattern as before: session -> group exists -> group.ownerId matches.
+
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string; taskId: string } }
 ) {
-const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions);
 
-  if(!session){
+  if (!session) {
     return NextResponse.json(
-      {error: "Unauthorized"},
-      {status: 401}
+      { error: "Unauthorized" },
+      { status: 401 }
     );
   }
-
+  const body = await request.json();
+  const parsedResponse = updateTaskSchema.safeParse(body);
+  if (!parsedResponse.success) {
+    return NextResponse.json(
+      { error: parsedResponse.error.issues[0].message },
+      { status: 400 }
+    );
+  }
   const group = await getGroupById(params.id);
+  
   if (!group) {
     return NextResponse.json(
-      { error: "Group not found" }, 
+      { error: "Group not found" },
       { status: 404 }
     );
   }
 
-  if (group.ownerId !== session.user.id){
+  if (group.ownerId !== session.user.id) {
     return NextResponse.json(
-      {error: "Only the owner can modify this task"},
-      {status: 403}
+      { error: "Only the owner can modify this task" },
+      { status: 403 }
     );
   }
-
-  const body = await request.json();
+  
+  
   const updated = await updateTask(params.id, params.taskId, body);
 
   if (!updated) {
@@ -44,17 +51,16 @@ const session = await getServerSession(authOptions);
   return NextResponse.json(updated);
 }
 
-// TODO (Step 15): DELETE /api/groups/:id/tasks/:taskId — same pattern as PATCH.
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string; taskId: string } }
 ) {
-const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions);
 
-  if(!session){
+  if (!session) {
     return NextResponse.json(
-      {error: "Unauthorized"},
-      {status: 401}
+      { error: "Unauthorized" },
+      { status: 401 }
     );
   }
 
@@ -63,10 +69,10 @@ const session = await getServerSession(authOptions);
     return NextResponse.json({ error: "Group not found" }, { status: 404 });
   }
 
-if (group.ownerId !== session.user.id){
+  if (group.ownerId !== session.user.id) {
     return NextResponse.json(
-      {error: "Only the group owner can delete this task"},
-      {status: 403}
+      { error: "Only the group owner can delete this task" },
+      { status: 403 }
     );
   }
 

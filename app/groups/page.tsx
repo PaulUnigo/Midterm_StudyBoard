@@ -24,8 +24,8 @@ export default async function GroupsPage() {
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             + New Group
-          </Link>
-        }
+        </Link>
+        }  
       </div>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {groups.map((group) => (
