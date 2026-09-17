@@ -6,9 +6,10 @@ import { createTaskSchema } from "@/lib/validations";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 1. Type as Promise
 ) {
-  const group = await getGroupById(params.id);
+  const { id } = await params; // 2. Await params
+  const group = await getGroupById(id);
 
   if (!group) {
     return NextResponse.json({ error: "Group not found" }, { status: 404 });
@@ -17,11 +18,11 @@ export async function GET(
   return NextResponse.json(group.tasks);
 }
 
-
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 1. Type as Promise
 ) {
+  const { id } = await params; // 2. Await params
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -40,8 +41,7 @@ export async function POST(
     );
   }
 
-  const group = await getGroupById(params.id);
-  
+  const group = await getGroupById(id);
   
   if (!group) {
     return NextResponse.json({ error: "Group not found" }, { status: 404 });
@@ -54,8 +54,6 @@ export async function POST(
     );
   }
 
-
-
   if (!body.title) {
     return NextResponse.json(
       { error: "'title' is required" },
@@ -63,6 +61,6 @@ export async function POST(
     );
   }
 
-  const newTask = await createTask(params.id, body.title);
+  const newTask = await createTask(id, body.title);
   return NextResponse.json(newTask, { status: 201 });
 }

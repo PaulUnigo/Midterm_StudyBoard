@@ -4,11 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { getGroupById, updateTask, deleteTask } from "@/lib/data";
 import { updateTaskSchema } from "@/lib/validations";
 
-
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string; taskId: string } }
+  { params }: { params: Promise<{ id: string; taskId: string }> } // 1. Type as Promise
 ) {
+  const { id, taskId } = await params; // 2. Await params
+
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -25,7 +26,7 @@ export async function PATCH(
       { status: 400 }
     );
   }
-  const group = await getGroupById(params.id);
+  const group = await getGroupById(id); // 3. Use unwrapped id
   
   if (!group) {
     return NextResponse.json(
@@ -41,8 +42,7 @@ export async function PATCH(
     );
   }
   
-  
-  const updated = await updateTask(params.id, params.taskId, body);
+  const updated = await updateTask(id, taskId, body); // 4. Use unwrapped id and taskId
 
   if (!updated) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -53,8 +53,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string; taskId: string } }
+  { params }: { params: Promise<{ id: string; taskId: string }> } // 1. Type as Promise
 ) {
+  const { id, taskId } = await params; // 2. Await params
+
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -64,7 +66,7 @@ export async function DELETE(
     );
   }
 
-  const group = await getGroupById(params.id);
+  const group = await getGroupById(id); // 3. Use unwrapped id
   if (!group) {
     return NextResponse.json({ error: "Group not found" }, { status: 404 });
   }
@@ -76,7 +78,7 @@ export async function DELETE(
     );
   }
 
-  const deleted = await deleteTask(params.id, params.taskId);
+  const deleted = await deleteTask(id, taskId); // 4. Use unwrapped id and taskId
 
   if (!deleted) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });

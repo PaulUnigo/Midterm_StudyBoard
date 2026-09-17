@@ -6,9 +6,10 @@ import { updateGroupSchema } from "@/lib/validations";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 1. Type as Promise
 ) {
-  const group = await getGroupById(params.id);
+  const { id } = await params; // 2. Await params
+  const group = await getGroupById(id);
 
   if (!group) {
     return NextResponse.json({ error: "Group not found" }, { status: 404 });
@@ -17,11 +18,11 @@ export async function GET(
   return NextResponse.json(group);
 }
 
-
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 1. Type as Promise
 ) {
+  const { id } = await params; // 2. Await params
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -33,14 +34,14 @@ export async function PATCH(
 
   const body = await request.json();
   const parsedResponse = updateGroupSchema.safeParse(body);
-    if (!parsedResponse.success) {
-      return NextResponse.json(
-        { error: parsedResponse.error.issues[0].message },
-        { status: 400 }
-      );
-    }
+  if (!parsedResponse.success) {
+    return NextResponse.json(
+      { error: parsedResponse.error.issues[0].message },
+      { status: 400 }
+    );
+  }
 
-  const group = await getGroupById(params.id);
+  const group = await getGroupById(id);
 
   if (!group) {
     return NextResponse.json(
@@ -56,20 +57,16 @@ export async function PATCH(
     );
   }
 
-  
-  const updated = await updateGroup(params.id, body);
-
-  if (!group) {
-    return NextResponse.json({ error: "Group not found" }, { status: 404 });
-  }
+  const updated = await updateGroup(id, body);
 
   return NextResponse.json(updated);
 }
 
-  export async function DELETE(
+export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 1. Type as Promise
 ) {
+  const { id } = await params; // 2. Await params
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -79,7 +76,7 @@ export async function PATCH(
     );
   }
   
-  const group = await getGroupById(params.id);
+  const group = await getGroupById(id);
 
   if (!group) {
     return NextResponse.json(
@@ -95,7 +92,7 @@ export async function PATCH(
     );
   }
 
-  const deleted = await deleteGroup(params.id);
+  const deleted = await deleteGroup(id);
 
   if (!deleted) {
     return NextResponse.json({ error: "Group not found" }, { status: 404 });
