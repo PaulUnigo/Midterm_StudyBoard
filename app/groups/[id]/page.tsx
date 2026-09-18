@@ -6,17 +6,19 @@ import DeleteGroupButton from "@/components/DeleteGroupButtons";
 import NewTaskForm from "@/components/NewTaskForm";
 import TaskItem from "@/components/TaskItem";
 
+//import a function that patch/update a task in the database
+
 export default async function GroupDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>; // 👈 1. Change type to Promise
+  params: Promise<{ id: string }>;
 }) {
-  // 👈 2. Await params first to unwrap the object
+
   const resolvedParams = await params;
   const id = resolvedParams.id;
 
   const [group, session] = await Promise.all([
-    getGroupById(id), // 👈 3. Use the resolved id here
+    getGroupById(id),
     getServerSession(authOptions),
   ]);
 
