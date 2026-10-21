@@ -49,9 +49,23 @@ export async function PATCH(request: Request, { params }: Ctx) {
 
   const updated = await updateGroup(id, parsedResponse.data);
 
-  if (!updated) {
-    return NextResponse.json({ error: "Group not found" }, { status: 404 });
+  const group = await getGroupById(id);
+
+  if (!group) {
+    return NextResponse.json(
+      { error: "Group not found" }, 
+      { status: 404 }
+    );
   }
+
+  if (group.ownerId !== session.user.id) {
+    return NextResponse.json(
+      { error: "Only the owner can modify this group" },
+      { status: 403 }
+    );
+  }
+
+  const updated = await updateGroup(id, body);
 
   return NextResponse.json(updated);
 }

@@ -2,12 +2,17 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getGroupById } from "@/lib/data";
+import { authOptions } from "@/lib/auth";
+import DeleteGroupButton from "@/components/DeleteGroupButtons";
+import NewTaskForm from "@/components/NewTaskForm";
 import TaskItem from "@/components/TaskItem";
 import DeleteGroupButton from "@/components/DeleteGroupButtons";
 import NewTaskForm from "@/components/NewTaskForm";
 import BookSearch from "@/components/BookSearch";
 import AISubtaskGenerator from "@/components/AISubtaskSuggester";
 import RealtimeNotifications from "@/components/RealTimeNotifications";
+
+//import a function that patch/update a task in the database
 
 export default async function GroupDetailPage({
   params,

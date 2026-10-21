@@ -27,7 +27,10 @@ export async function PATCH(request: Request, { params }: Ctx) {
 
   const group = await getGroupById(id);
   if (!group) {
-    return NextResponse.json({ error: "Group not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Group not found" },
+      { status: 404 }
+    );
   }
 
   if (group.ownerId !== session.user.id) {
