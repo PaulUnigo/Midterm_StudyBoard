@@ -12,17 +12,26 @@ export default function NewGroupForm() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // TODO (Step 8): Implement the submit handler.
-  // 1. Prevent default submission and clear any previous error.
-  // 2. POST to /api/groups with { name, subject, memberCount } as JSON.
-  //    (fetch() automatically includes the NextAuth session cookie for
-  //    same-origin requests — that's how the API route knows who you are.)
-  // 3. If the response is not ok, show the error message from the body.
-  // 4. If it succeeded, parse the created group from the response and
-  //    redirect to its detail page: router.push(`/groups/${newGroup.id}`)
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError("TODO: implement create-group submit handler");
+    setError("");
+    setIsSubmitting(true);
+
+    const response = await fetch("/api/groups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, subject, memberCount }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      setError(data.error ?? "Something went wrong");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const newGroup = await response.json();
+    router.push(`/groups/${newGroup.id}`);
   }
 
   return (
