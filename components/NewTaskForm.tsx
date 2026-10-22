@@ -2,7 +2,8 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/Button";
+import Button from "./Button";
+import { socket } from "@/lib/socketClient";
 
 export default function NewTaskForm({ groupId }: { groupId: string }) {
   const router = useRouter();
@@ -15,30 +16,33 @@ export default function NewTaskForm({ groupId }: { groupId: string }) {
     setError("");
     setIsSubmitting(true);
 
-    const res = await fetch(`/api/groups/${groupId}/tasks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    }).catch(() => null);
+    try {
+      const res = await fetch(`/api/groups/${groupId}/tasks`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Socket-Id": socket.id ?? "",
+        },
+        body: JSON.stringify({ title }),
+      });
 
-    if (!res || !res.ok) {
-      let errorMsg = "Failed to add task";
-      if (res) {
-        const data = await res.json().catch(() => ({}));
-        errorMsg = data.error || errorMsg;
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.error ?? `Request failed (${res.status})`);
+        return;
       }
-      setError(errorMsg);
-      setIsSubmitting(false);
-      return;
-    }
 
-    setTitle("");
-    setIsSubmitting(false);
-    router.refresh();
+      setTitle("");
+      router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
-    <div>
+    <div className="mt-4">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"
@@ -46,13 +50,13 @@ export default function NewTaskForm({ groupId }: { groupId: string }) {
           placeholder="Add a new task..."
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="flex-1 rounded-md border px-3 py-2 text-sm"
+          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
         />
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Adding..." : "Add"}
+          {isSubmitting ? "Adding..." : "Add Task"}
         </Button>
       </form>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="text-red-500">{error}</p>}
     </div>
   );
 }

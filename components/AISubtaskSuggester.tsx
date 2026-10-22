@@ -1,0 +1,150 @@
+"use client";
+
+import { socket } from "@/lib/socketClient";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+
+export default function AISubtaskGenerator({ groupId }: { groupId: string }) {
+  const router = useRouter();
+  const [topic, setTopic] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleGenerate(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setIsGenerating(true);
+    setSuggestions([]);
+    setChecked(new Set());
+
+    try {
+      const response = await fetch(`/api/groups/${groupId}/tasks/suggest`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Socket-Id": socket.id ?? "",
+        },
+        body: JSON.stringify({ topic }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setError(data?.error ?? `Request failed (${response.status})`);
+        return;
+      }
+
+      const data: { subtasks: string[] } = await response.json();
+      setSuggestions(data.subtasks);
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  function toggleChecked(subtask: string) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(subtask)) {
+        next.delete(subtask);
+      } else {
+        next.add(subtask);
+      }
+      return next;
+    });
+  }
+
+  async function handleAddSelected() {
+    setIsAdding(true);
+    setError("");
+
+    try {
+      const selected = suggestions.filter((s) => checked.has(s));
+
+      const results = await Promise.all(
+        selected.map((title) =>
+          fetch(`/api/groups/${groupId}/tasks`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Socket-Id": socket.id ?? "",
+            },
+            body: JSON.stringify({ title }),
+          })
+        )
+      );
+
+      if (results.some((res) => !res.ok)) {
+        setError("Some tasks could not be added. Please try again.");
+        return;
+      }
+
+      setSuggestions([]);
+      setChecked(new Set());
+      setTopic("");
+      router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsAdding(false);
+    }
+  }
+
+  return (
+    <div className="rounded-md border border-dashed p-4">
+      <p className="text-sm font-medium text-red-700">✨ AI Task Breakdown</p>
+      <p className="mt-1 text-xs text-red-500">
+        Describe a broad task, and get suggested subtasks to add.
+      </p>
+
+      <form onSubmit={handleGenerate} className="mt-3 flex gap-2">
+        <input
+          type="text"
+          required
+          placeholder="e.g. Prepare for the midterm exam"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          className="flex-1 rounded-md border px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          disabled={isGenerating}
+          className="whitespace-nowrap rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+        >
+          {isGenerating ? "Thinking..." : "Suggest Subtasks"}
+        </button>
+      </form>
+
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+
+      {suggestions.length > 0 && (
+        <div className="mt-3">
+          <ul className="flex flex-col gap-1 text-red-600">
+            {suggestions.map((subtask) => (
+              <li key={subtask} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={checked.has(subtask)}
+                  onChange={() => toggleChecked(subtask)}
+                  className="h-4 w-4"
+                />
+                <span>{subtask}</span>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={handleAddSelected}
+            disabled={isAdding || checked.size === 0}
+            className="mt-3 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {isAdding ? "Adding..." : `Add Selected (${checked.size})`}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

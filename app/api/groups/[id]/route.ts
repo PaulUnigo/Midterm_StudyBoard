@@ -3,12 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getGroupById, updateGroup, deleteGroup } from "@/lib/data";
 import { updateGroupSchema } from "@/lib/validations";
+import { emitGroup } from "@/lib/socket";
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> } // 1. Type as Promise
-) {
-  const { id } = await params; // 2. Await params
+type Ctx = { params: Promise<{ id: string }> };
+
+export async function GET(request: Request, { params }: Ctx) {
+  const { id } = await params;
   const group = await getGroupById(id);
 
   if (!group) {
@@ -18,18 +18,12 @@ export async function GET(
   return NextResponse.json(group);
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> } // 1. Type as Promise
-) {
-  const { id } = await params; // 2. Await params
+export async function PATCH(request: Request, { params }: Ctx) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
@@ -40,6 +34,20 @@ export async function PATCH(
       { status: 400 }
     );
   }
+
+  const group = await getGroupById(id);
+  if (!group) {
+    return NextResponse.json({ error: "Group not found" }, { status: 404 });
+  }
+
+  if (group.ownerId !== session.user.id) {
+    return NextResponse.json(
+      { error: "Only the owner can modify this group" },
+      { status: 403 }
+    );
+  }
+
+  const updated = await updateGroup(id, parsedResponse.data);
 
   const group = await getGroupById(id);
 
@@ -62,27 +70,18 @@ export async function PATCH(
   return NextResponse.json(updated);
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> } // 1. Type as Promise
-) {
-  const { id } = await params; // 2. Await params
+export async function DELETE(request: Request, { params }: Ctx) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  
+
   const group = await getGroupById(id);
 
   if (!group) {
-    return NextResponse.json(
-      { error: "Group not found" }, 
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Group not found" }, { status: 404 });
   }
 
   if (group.ownerId !== session.user.id) {
@@ -97,6 +96,8 @@ export async function DELETE(
   if (!deleted) {
     return NextResponse.json({ error: "Group not found" }, { status: 404 });
   }
+
+  emitGroup(id, "group:deleted", { groupId: id });
 
   return NextResponse.json({ message: "Group deleted" });
 }
